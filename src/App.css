@@ -1,28 +1,72 @@
-.App {
+.Card {
+  height: 323px;
+  width: 222px;
+  background-color: white;
+  border-radius: 20px;
+  border: 5px solid black;
+  display: inline-block;
+}
+
+.MyCards{
+  position: absolute;
+  bottom:10px;
+  width: 474px;
+  height: 353px;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
+  transform:scale(.75);
+  transform-origin: bottom;
+
+  background-color: white;
+  border-radius: 10px;
+  padding:10px;
+}
+
+.MyCards div:nth-child(2){
+  margin-left: 10px;
+}
+
+.GlobalCards{
+  width: 1170px;
+  height: 353px;
+  top:60px;
+
+  position: absolute;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
+
   text-align: center;
+
+  background-color: white;
+  border-radius: 10px;
+  padding:10px;
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+.GlobalCards div{
+  display: inline-block;
+  margin:0px 4px;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+.Options{
+  width:100px;
+  position: absolute;
+  bottom: 10px;
+  right:calc(50% - 300px);
+  background-color: white;
+  border-radius: 10px;
+  padding: 10px;
+  height: 
 }
 
-.App-title {
-  font-size: 1.5em;
+.Options button{
+  width:80px;
+  margin-bottom:5px;
 }
 
-.App-intro {
-  font-size: large;
-}
-
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+body {
+  background-color: #F3F3F3;
 }
