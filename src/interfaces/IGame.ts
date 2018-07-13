@@ -1,5 +1,6 @@
-interface IGame {
-    turn:number,
-    localPlayerTurn:boolean,
+import {ICard} from './ICard';
+
+export interface IGame {
+    turnPlayer:string,
     cards:ICard[]
 }

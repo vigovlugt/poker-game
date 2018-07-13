@@ -1,4 +1,4 @@
 interface IPlayerData {
-  numCards: number,
+  name: string,
   money: number
 }
