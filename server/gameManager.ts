@@ -20,9 +20,12 @@ export function setup(server:http.Server){
         
         socket.on(Action.Turn,(turnType: Turn, raiseMoney: number | undefined) => {
             // Apply turn
-            game.turn(turnType,raiseMoney);
-            // Send turn to all clients
-            io.emit(Action.GameData,game.getGameData());
+            if(game.turnPlayer === socket.id){
+                game.turn(turnType,raiseMoney);
+                // Send turn to all clients
+                io.emit(Action.GameData,game.getGameData());
+            }
+            
         })
 
         socket.on(Action.Disconnect,()=>{
