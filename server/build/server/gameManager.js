@@ -1,13 +1,13 @@
 "use strict";
 exports.__esModule = true;
 var socketIo = require("socket.io");
-var Enums_1 = require(".././shared/modules/Enums");
+var Enums_1 = require("../client/src/shared/modules/Enums");
 var game_1 = require("./game");
 var io = socketIo(3002);
-var game = new game_1["default"]();
+var game = new game_1["default"](io);
 io.on('connection', function (socket) {
     // Let game class know to let socket join
-    game.join(socket.id);
+    game.onJoin(socket.id);
     // Send game data to socket
     socket.emit(Enums_1.Action.GameData, game.getGameData());
     socket.on(Enums_1.Action.Turn, function (turnType, raiseMoney) {

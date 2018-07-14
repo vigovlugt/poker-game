@@ -1,0 +1,4 @@
+- handling leaving
+- handling raising
+- handling rounds
+- handling wincoditions

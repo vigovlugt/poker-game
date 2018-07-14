@@ -1,15 +1,15 @@
 import * as socketIo from 'socket.io';
 
-import { Action, Turn } from '.././shared/modules/Enums';
+import { Action, Turn } from '../client/src/shared/modules/Enums';
 import Game from './game';
 
 const io = socketIo(3002);
 
-const game = new Game();
+const game = new Game(io);
 
 io.on('connection',(socket)=>{
     // Let game class know to let socket join
-    game.join(socket.id);
+    game.onJoin(socket.id);
 
     // Send game data to socket
     socket.emit(Action.GameData,game.getGameData());
