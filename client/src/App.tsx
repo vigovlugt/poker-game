@@ -78,7 +78,7 @@ class App extends React.Component<any,IState> {
   }
 
   public componentDidMount(){
-    const socket = io( window.location.host === 'play-poker.herokuapp.com' ? 'play-poker.herokuapp.com' : 'localhost');
+    const socket = io( window.location.host === 'play-poker.herokuapp.com' ? 'play-poker.herokuapp.com' : 'localhost:3001');
     this.setState({socket});
 
     socket.on(Action.GameData,(game:IGame)=>{
