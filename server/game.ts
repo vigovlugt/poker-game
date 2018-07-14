@@ -8,6 +8,7 @@ export default class Game{
     public publicCards: ICard[] = [];
 
     public players: string[] = [];
+    public cardsByPlayer: {[playerId:string]:ICard[]} = {};
 
     public turnPlayer: string;
     public turnPlayerIndex: number;
@@ -61,8 +62,8 @@ export default class Game{
         this.updateGameData();
 
         this.players.forEach((player:string)=>{
-            console.log(player)
-            this.io.sockets.sockets[player].emit(Action.PrivateCards,[this.getCardFromDeck(),this.getCardFromDeck()])
+            this.cardsByPlayer[player] = [this.getCardFromDeck(),this.getCardFromDeck()]
+            this.io.sockets.sockets[player].emit(Action.PrivateCards,this.cardsByPlayer[player])
         });
 
     }
@@ -70,9 +71,14 @@ export default class Game{
     public endRound():void{
         // Tell client round is done and who the winner(s) are
         
-        this.io.emit(Action.EndRound,this.getWinners())
+        this.io.emit(Action.EndRound,{
+            winners:this.getWinners(),
+            cardsByPlayer:this.cardsByPlayer
+        }
+    );
         this.updateGameData();
-        this.startRound();
+
+        setInterval(this.startRound,5000);
     }
 
     public getWinners():string[]{
@@ -108,6 +114,8 @@ export default class Game{
         // Handle Leave
 
         // console.log("begin:", this.players);
+
+        delete this.cardsByPlayer[leavePlayer];
 
         if(this.turnPlayer === leavePlayer){ // Player had the turn 
 
@@ -147,7 +155,8 @@ export default class Game{
         return {
             turnPlayer: this.turnPlayer,
             cards: this.publicCards,
-            players:this.players.map((playerId:string):IPlayerData=>{return {id:playerId,name:playerId,money:0} })
+            players:this.players.map((playerId:string):IPlayerData=>{return {id:playerId,name:playerId,money:0} }),
+            cardsByPlayer:{}
         }
     }
 

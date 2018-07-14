@@ -4,5 +4,6 @@ import {IPlayerData} from './IPlayerData';
 export interface IGame {
     turnPlayer:string,
     players: IPlayerData[],
-    cards:ICard[]
+    cards:ICard[],
+    cardsByPlayer: {[playerId:string]:ICard[]}
 }

@@ -9,6 +9,7 @@ import { Action, MessageType, Turn } from './shared/modules/Enums';
 import { IGame } from './interfaces/IGame';
 import { IMessage } from './interfaces/IMessage';
 import { IPlayerData } from './interfaces/IPlayerData';
+import { IRoundEndData } from './interfaces/IRoundEndData';
 
 class App extends React.Component<any,IState> {
   constructor(props: any){
@@ -17,7 +18,8 @@ class App extends React.Component<any,IState> {
       game:{
         cards:[],
         turnPlayer:"",
-        players:[]
+        players:[],
+        cardsByPlayer:{}
       },
       local:{
         cards:[],
@@ -98,8 +100,16 @@ class App extends React.Component<any,IState> {
       // this.setState
     });
 
-    socket.on(Action.EndRound,(winner:string)=>{
-      this.setState({message:{text:`The winner is ${winner}`,type:MessageType.Succes}});
+    socket.on(Action.EndRound,(roundEndData:IRoundEndData)=>{
+      this.setState({
+        message:{text:`The winner is ${roundEndData.winners}`,type:MessageType.Succes},
+        game:{...this.state.game,cardsByPlayer:roundEndData.cardsByPlayer}
+      });
+
+      setInterval(()=>{
+        this.setState({game:{...this.state.game,cardsByPlayer:{}}});
+      },5000);
+
     })
 
     socket.on(Action.Message,(message: IMessage)=>{
@@ -200,7 +210,9 @@ class App extends React.Component<any,IState> {
   }
 
   public check(){
-    this.state.socket!.emit(Action.Turn,Turn.Check);
+    if(this.state.game.turnPlayer === this.state.socket!.id){
+      this.state.socket!.emit(Action.Turn,Turn.Check);
+    }
   }
 
   public fold(){
