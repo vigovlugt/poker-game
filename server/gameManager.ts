@@ -10,9 +10,10 @@ export function setup(server:http.Server){
 
     const game = new Game(io);
 
-    io.on('connection',(socket)=>{
+    io.on('connection',(socket:socketIo.Socket)=>{
         // Let game class know to let socket join
         game.onJoin(socket.id);
+        socket.emit(Action.ClientConnect,socket.id);
 
         // Send game data to socket
         socket.emit(Action.GameData,game.getGameData());

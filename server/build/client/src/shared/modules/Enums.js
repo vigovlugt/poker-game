@@ -27,6 +27,8 @@ var Action;
     Action["Turn"] = "turn";
     Action["EndRound"] = "endRound";
     Action["Message"] = "message";
+    Action["PrivateCards"] = "privateCards";
+    Action["ClientConnect"] = "clientConnect";
 })(Action = exports.Action || (exports.Action = {}));
 var MessageType;
 (function (MessageType) {

@@ -23,7 +23,9 @@ export enum Action {
     Disconnect = 'disconnect',
     Turn = 'turn',
     EndRound = 'endRound',
-    Message = 'message'
+    Message = 'message',
+    PrivateCards = 'privateCards',
+    ClientConnect = 'clientConnect'
 }
 
 export enum MessageType{

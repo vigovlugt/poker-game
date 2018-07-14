@@ -26,7 +26,7 @@ var Game = /** @class */ (function () {
                 this.endRound();
             }
             else {
-                this.drawCard();
+                this.pickPublicCard();
                 this.updateGameData();
             }
         }
@@ -37,23 +37,33 @@ var Game = /** @class */ (function () {
         }
     };
     Game.prototype.startRound = function () {
+        var _this = this;
         this.turnPlayerIndex = 0;
         this.turnPlayer = this.players[0];
+        this.publicCards = [];
         this.refreshDeck();
+        this.updateGameData();
+        this.players.forEach(function (player) {
+            console.log(player);
+            _this.io.sockets.sockets[player].emit(Enums_1.Action.PrivateCards, [_this.getCardFromDeck(), _this.getCardFromDeck()]);
+        });
     };
     Game.prototype.endRound = function () {
         // Tell client round is done and who the winner(s) are
-        this.publicCards = [];
         this.io.emit(Enums_1.Action.EndRound, this.getWinners());
         this.updateGameData();
+        this.startRound();
     };
     Game.prototype.getWinners = function () {
         return this.players;
     };
-    Game.prototype.drawCard = function () {
+    Game.prototype.pickPublicCard = function () {
         this.publicCards.push(
         //Remove card from deck and add to public cards
-        this.deck.splice(Math.floor(Math.random() * this.deck.length), 1)[0]);
+        this.getCardFromDeck());
+    };
+    Game.prototype.getCardFromDeck = function () {
+        return this.deck.splice(Math.floor(Math.random() * this.deck.length), 1)[0];
     };
     Game.prototype.onJoin = function (player) {
         this.players.push(player);
@@ -63,31 +73,37 @@ var Game = /** @class */ (function () {
         }
         else {
             this.io.emit(Enums_1.Action.Message, { text: 2 - this.players.length + " player(s) needed to start", type: Enums_1.MessageType.Info });
+            this.updateGameData();
         }
-        this.updateGameData();
     };
-    Game.prototype.onLeave = function (player) {
+    Game.prototype.onLeave = function (leavePlayer) {
         // Handle Leave
-        if (this.turnPlayer === player) { // Player had the turn 
-            this.players.splice(this.turnPlayerIndex, 1);
-            if (this.turnPlayerIndex === this.players.length) {
+        // console.log("begin:", this.players);
+        if (this.turnPlayer === leavePlayer) { // Player had the turn 
+            this.players.splice(this.players.indexOf(leavePlayer), 1);
+            if (this.turnPlayerIndex === this.players.length) { // check if turnplayerindex outside array
                 this.turnPlayerIndex = 0;
                 this.turnPlayer = this.players[0];
             }
             else {
-                // new turnplayer is automatically the next player in players
+                // the next turnplayer is automatically the next player in players
                 this.turnPlayer = this.players[this.turnPlayerIndex];
             }
         }
-        else {
-            this.players.splice(this.turnPlayerIndex, 1);
+        else { // Leaveplayer did not have the turn
+            // console.log(this.players.indexOf(leavePlayer))
+            this.players.splice(this.players.indexOf(leavePlayer), 1);
+            // Leaveplayer could have affected the index so just update it with te name
             this.turnPlayerIndex = this.players.indexOf(this.turnPlayer);
         }
-        console.log(player + " left the game with " + this.players.length + " player(s)");
-        this.updateGameData();
+        console.log(leavePlayer + " left the game with " + this.players.length + " player(s)");
         if (this.players.length < 2) {
             this.endRound();
         }
+        else {
+            this.updateGameData();
+        }
+        // console.log("end:", this.players);
     };
     Game.prototype.updateGameData = function () {
         this.io.emit(Enums_1.Action.GameData, this.getGameData());

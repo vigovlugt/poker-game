@@ -81,14 +81,21 @@ class App extends React.Component<any,IState> {
     const socket = io( window.location.host === 'play-poker.herokuapp.com' ? 'play-poker.herokuapp.com' : 'localhost:3001');
     this.setState({socket});
 
+    socket.on(Action.ClientConnect,(name:string)=>{
+      this.setState({local:{...this.state.local,name}})
+    })
+
     socket.on(Action.GameData,(game:IGame)=>{
+      // console.log(game.players)
       // sort so local is top
       let players = [];
       players = game.players.filter((player:IPlayerData)=>player.id !== this.state.socket!.id );
-      this.setState({local:{cards:[],money:1000,name:this.state.socket!.id}})
-      game.players = players;
 
+      game.players = players;
+      // console.log('clientside:')
+      // console.log(game.players)
       this.setState({game});
+      // this.setState
     });
 
     socket.on(Action.EndRound,(winner:string)=>{
@@ -100,6 +107,13 @@ class App extends React.Component<any,IState> {
       setInterval(()=>{
         this.setState({message:undefined});
       },3000)
+    })
+
+    socket.on(Action.PrivateCards,(cards:ICard[])=>{
+      console.log(cards);
+      const local = this.state.local;
+      local.cards = cards
+      this.setState({local});
     })
   }
 

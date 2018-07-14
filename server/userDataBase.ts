@@ -23,7 +23,6 @@ export function login(name:string,password:string):boolean{
     let json = JSON.parse(data.toString());
 
     let valid = false;
-
     
     json.users.forEach((user:IUser) => {
         if(user.name === name && user.password === password){
