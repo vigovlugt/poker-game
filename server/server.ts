@@ -1,9 +1,15 @@
 import * as express from "express";
-import './gameManager'
+import * as gameManager from './gameManager'
 import * as db from './userDataBase'
 import * as path from 'path';
 
+import * as http from 'http';
+
 const app = express();
+
+const server = http.createServer(app);
+
+gameManager.setup(server);
 
 app.use(express.static(path.join(__dirname,'/../../../client/build')));
 
@@ -22,4 +28,4 @@ app.get("/api/register/:name/:password",(req,res)=>{
 });
 
 // tslint:disable-next-line:no-console
-app.listen(process.env.PORT || 3001,()=>{console.log("listening on port " + (process.env.PORT || 3001))});
+server.listen(process.env.PORT || 3001,()=>{console.log("listening on port " + (process.env.PORT || 3001))});
