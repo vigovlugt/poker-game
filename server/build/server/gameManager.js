@@ -14,9 +14,11 @@ function setup(server) {
         socket.emit(Enums_1.Action.GameData, game.getGameData());
         socket.on(Enums_1.Action.Turn, function (turnType, raiseMoney) {
             // Apply turn
-            game.turn(turnType, raiseMoney);
-            // Send turn to all clients
-            io.emit(Enums_1.Action.GameData, game.getGameData());
+            if (game.turnPlayer === socket.id) {
+                game.turn(turnType, raiseMoney);
+                // Send turn to all clients
+                io.emit(Enums_1.Action.GameData, game.getGameData());
+            }
         });
         socket.on(Enums_1.Action.Disconnect, function () {
             game.onLeave(socket.id);

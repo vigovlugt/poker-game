@@ -1,14 +1,20 @@
 "use strict";
 exports.__esModule = true;
 var Enums_1 = require("../client/src/shared/modules/Enums");
+var chalk_1 = require("chalk");
+var readline = require("readline");
 var Game = /** @class */ (function () {
     function Game(io) {
         this.deck = [];
         this.publicCards = [];
         this.players = [];
+        this.cardsByPlayer = {};
+        this.ended = true;
         this.io = io;
     }
     Game.prototype.turn = function (turnType, raiseMoney) {
+        if (this.ended)
+            return;
         switch (turnType) {
             case Enums_1.Turn.Check:
                 break;
@@ -27,32 +33,55 @@ var Game = /** @class */ (function () {
             }
             else {
                 this.pickPublicCard();
-                this.updateGameData();
+                this.syncGameData();
             }
         }
         else {
             this.turnPlayerIndex++;
             this.turnPlayer = this.players[this.turnPlayerIndex];
-            this.updateGameData();
+            this.syncGameData();
         }
     };
     Game.prototype.startRound = function () {
         var _this = this;
+        this.ended = false;
         this.turnPlayerIndex = 0;
         this.turnPlayer = this.players[0];
+        this.cardsByPlayer = {};
         this.publicCards = [];
         this.refreshDeck();
-        this.updateGameData();
+        this.syncGameData();
         this.players.forEach(function (player) {
-            console.log(player);
-            _this.io.sockets.sockets[player].emit(Enums_1.Action.PrivateCards, [_this.getCardFromDeck(), _this.getCardFromDeck()]);
+            _this.cardsByPlayer[player] = [_this.getCardFromDeck(), _this.getCardFromDeck()];
+            _this.io.sockets.sockets[player].emit(Enums_1.Action.PrivateCards, _this.cardsByPlayer[player]);
         });
     };
     Game.prototype.endRound = function () {
         // Tell client round is done and who the winner(s) are
-        this.io.emit(Enums_1.Action.EndRound, this.getWinners());
-        this.updateGameData();
-        this.startRound();
+        var _this = this;
+        var timeLeft = 15;
+        var interval = setInterval(function () {
+            readline.clearLine(process.stdout, 0);
+            readline.cursorTo(process.stdout, 0);
+            process.stdout.write('Round ended, starting new round in ' + --timeLeft);
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                readline.clearLine(process.stdout, 0);
+                readline.cursorTo(process.stdout, 0);
+            }
+        }, 1000);
+        //console.log(chalk.blue);
+        if (!this.ended && this.players.length > 1) {
+            setTimeout(function () {
+                _this.startRound();
+            }, 15000);
+        }
+        this.ended = true;
+        this.syncGameData();
+        this.io.emit(Enums_1.Action.EndRound, {
+            winners: this.getWinners(),
+            cardsByPlayer: this.cardsByPlayer
+        });
     };
     Game.prototype.getWinners = function () {
         return this.players;
@@ -67,18 +96,19 @@ var Game = /** @class */ (function () {
     };
     Game.prototype.onJoin = function (player) {
         this.players.push(player);
-        console.log(player + " joined the game with " + this.players.length + " player(s)");
+        console.log(chalk_1["default"].green(player + " joined the game with " + this.players.length + " player(s)"));
         if (this.players.length === 2) {
             this.startRound();
         }
         else {
             this.io.emit(Enums_1.Action.Message, { text: 2 - this.players.length + " player(s) needed to start", type: Enums_1.MessageType.Info });
-            this.updateGameData();
+            this.syncGameData();
         }
     };
     Game.prototype.onLeave = function (leavePlayer) {
         // Handle Leave
         // console.log("begin:", this.players);
+        delete this.cardsByPlayer[leavePlayer];
         if (this.turnPlayer === leavePlayer) { // Player had the turn 
             this.players.splice(this.players.indexOf(leavePlayer), 1);
             if (this.turnPlayerIndex === this.players.length) { // check if turnplayerindex outside array
@@ -96,23 +126,24 @@ var Game = /** @class */ (function () {
             // Leaveplayer could have affected the index so just update it with te name
             this.turnPlayerIndex = this.players.indexOf(this.turnPlayer);
         }
-        console.log(leavePlayer + " left the game with " + this.players.length + " player(s)");
+        console.log(chalk_1["default"].red(leavePlayer + " left the game with " + this.players.length + " player(s)"));
         if (this.players.length < 2) {
             this.endRound();
         }
         else {
-            this.updateGameData();
+            this.syncGameData();
         }
         // console.log("end:", this.players);
     };
-    Game.prototype.updateGameData = function () {
+    Game.prototype.syncGameData = function () {
         this.io.emit(Enums_1.Action.GameData, this.getGameData());
     };
     Game.prototype.getGameData = function () {
         return {
             turnPlayer: this.turnPlayer,
             cards: this.publicCards,
-            players: this.players.map(function (playerId) { return { id: playerId, name: playerId, money: 0 }; })
+            players: this.players.map(function (playerId) { return { id: playerId, name: playerId, money: 0 }; }),
+            cardsByPlayer: (this.ended) ? this.cardsByPlayer : {}
         };
     };
     Game.prototype.refreshDeck = function () {

@@ -30,57 +30,19 @@ class App extends React.Component<any,IState> {
       message: undefined
     };
 
-    //#region testdata
-
-    // this.state = {
-    //   game:{
-    //     cards:[
-    //       {
-    //         rank:Rank.Jack,suit:Suit.Spades
-    //       },
-    //       {
-    //         rank:Rank.King,suit:Suit.Clubs
-    //       },
-    //       {
-    //         rank:Rank.Queen,suit:Suit.Diamonds
-    //       },
-    //       {
-    //         rank:Rank.Ace,suit:Suit.Hearts
-    //       },
-    //       {
-    //         rank:Rank.Jack,suit:Suit.Diamonds
-    //       }
-    //     ],
-    //     turnPlayer:"hai"
-    //   },
-    //   local:{
-    //     cards:[
-    //       {suit:Suit.Diamonds,rank:2},
-    //       {suit:Suit.Diamonds,rank:2}
-    //     ],
-    //     money:1000,
-    //     name:"HeyHo"
-    //   },
-    //   players:[
-    //     {
-    //       money:1000,
-    //       name:"test"
-    //     },
-    //     {
-    //       money:2000,
-    //       name:"hai"
-    //     }
-    //   ]
-    // };
-
-    //#endregion 
     this.check = this.check.bind(this);
     this.fold = this.fold.bind(this);
     this.raise = this.raise.bind(this);
   }
 
   public componentDidMount(){
-    const socket = io( window.location.host === 'play-poker.herokuapp.com' ? 'play-poker.herokuapp.com' : 'localhost:3001');
+    const socket = io({
+      'play-poker.herokuapp.com': 'play-poker.herokuapp.com',
+      'localhost:3000': 'localhost:3001',
+      'localhost:3001': 'localhost:3001',
+      '192.168.178.57': '192.168.178.57:3001'
+    }[window.location.host]);
+
     this.setState({socket});
 
     socket.on(Action.ClientConnect,(name:string)=>{
@@ -98,6 +60,7 @@ class App extends React.Component<any,IState> {
       // console.log(game.players)
       this.setState({game});
       // this.setState
+      console.log('gamedata')
     });
 
     socket.on(Action.EndRound,(roundEndData:IRoundEndData)=>{
@@ -105,26 +68,20 @@ class App extends React.Component<any,IState> {
         message:{text:`The winner is ${roundEndData.winners}`,type:MessageType.Succes},
         game:{...this.state.game,cardsByPlayer:roundEndData.cardsByPlayer}
       });
-
-      setInterval(()=>{
-        this.setState({game:{...this.state.game,cardsByPlayer:{}}});
-      },5000);
-
-    })
+    });
 
     socket.on(Action.Message,(message: IMessage)=>{
       this.setState({message});
-      setInterval(()=>{
+      setTimeout(()=>{
         this.setState({message:undefined});
       },3000)
-    })
+    });
 
     socket.on(Action.PrivateCards,(cards:ICard[])=>{
-      console.log(cards);
       const local = this.state.local;
       local.cards = cards
       this.setState({local});
-    })
+    });
   }
 
   public render() {
@@ -198,6 +155,16 @@ class App extends React.Component<any,IState> {
                   <div className="Player" key={index} style={ player.name === this.state.game.turnPlayer ? {backgroundColor:"#007bff",color:"white"} : {} }>
                     <h2>{player.name}</h2>
                     <p>{player.money}</p>
+                    {
+                      this.state.game.cardsByPlayer.hasOwnProperty(player.id) ? 
+                      this.state.game.cardsByPlayer[player.id].map((card: ICard,cardIndex:number)=>{ // Display cards on round end
+                        return (
+                          <div className="Card player-card" key={cardIndex} style={{backgroundImage:`url(https://github.com/hayeah/playing-cards-assets/blob/master/png/${ `${card.rank}_of_${card.suit}.png` }?raw=true)`}}/>
+                        )
+                      })
+                      :
+                      null
+                    }
                   </div>
                 )
               })

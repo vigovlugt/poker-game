@@ -3,6 +3,9 @@ import { Rank, Suit, Turn, Action, MessageType } from "../client/src/shared/modu
 import { IGame } from "../client/src/interfaces/IGame";
 import { IPlayerData } from "../client/src/interfaces/IPlayerData";
 
+import {default as chalk } from 'chalk';
+import * as readline from 'readline';
+
 export default class Game{
     public deck: ICard[] = [];
     public publicCards: ICard[] = [];
@@ -12,6 +15,7 @@ export default class Game{
 
     public turnPlayer: string;
     public turnPlayerIndex: number;
+    public ended = true;
 
     public io: SocketIO.Server;
 
@@ -20,6 +24,9 @@ export default class Game{
     }
 
     public turn(turnType: Turn, raiseMoney:number | undefined){
+        if(this.ended)
+            return;
+
         switch (turnType) {
             case Turn.Check:
                 
@@ -44,22 +51,24 @@ export default class Game{
                 this.endRound()
             }else{
                 this.pickPublicCard();
-                this.updateGameData();
+                this.syncGameData();
             }
-        }
-        else{
+        }else{
             this.turnPlayerIndex++;
             this.turnPlayer = this.players[this.turnPlayerIndex];
-            this.updateGameData();
+            this.syncGameData();
         }
     }
 
     public startRound():void{
+        this.ended = false;
         this.turnPlayerIndex = 0;
         this.turnPlayer = this.players[0];
+        this.cardsByPlayer = {};
         this.publicCards = [];
         this.refreshDeck();
-        this.updateGameData();
+        
+        this.syncGameData();
 
         this.players.forEach((player:string)=>{
             this.cardsByPlayer[player] = [this.getCardFromDeck(),this.getCardFromDeck()]
@@ -71,14 +80,35 @@ export default class Game{
     public endRound():void{
         // Tell client round is done and who the winner(s) are
         
+        
+        let timeLeft = 15;
+        let interval = setInterval(()=>{
+            readline.clearLine(process.stdout,0);
+            readline.cursorTo(process.stdout,0);
+            process.stdout.write('Round ended, starting new round in ' + --timeLeft)
+            if(timeLeft <= 0){
+                clearInterval(interval);
+                readline.clearLine(process.stdout,0);
+                readline.cursorTo(process.stdout,0);
+            } 
+
+        },1000)
+        
+        //console.log(chalk.blue);
+
+        if(!this.ended && this.players.length > 1){
+            setTimeout(()=>{
+                this.startRound();
+            },15000);
+        }
+
+        this.ended = true;
+        this.syncGameData();
+
         this.io.emit(Action.EndRound,{
             winners:this.getWinners(),
             cardsByPlayer:this.cardsByPlayer
-        }
-    );
-        this.updateGameData();
-
-        setInterval(this.startRound,5000);
+        });
     }
 
     public getWinners():string[]{
@@ -99,14 +129,14 @@ export default class Game{
     public onJoin(player:string):void{
         this.players.push(player);
 
-        console.log(`${player} joined the game with ${this.players.length} player(s)`);
+        console.log(chalk.green(`${player} joined the game with ${this.players.length} player(s)`));
 
         if(this.players.length === 2){
             this.startRound();
         }
         else{
             this.io.emit(Action.Message,{text:`${ 2 - this.players.length} player(s) needed to start`,type:MessageType.Info})
-            this.updateGameData();
+            this.syncGameData();
         }
     }
 
@@ -136,18 +166,19 @@ export default class Game{
             this.turnPlayerIndex = this.players.indexOf(this.turnPlayer);
         }
 
-        console.log(`${leavePlayer} left the game with ${this.players.length} player(s)`);
+        console.log(chalk.red(`${leavePlayer} left the game with ${this.players.length} player(s)`));
 
         if(this.players.length < 2){
             this.endRound();
         }else{
-            this.updateGameData();
+            this.syncGameData();
         }
 
         // console.log("end:", this.players);
     }
 
-    public updateGameData():void{
+    public syncGameData():void{
+
         this.io.emit(Action.GameData,this.getGameData());
     }
 
@@ -156,7 +187,7 @@ export default class Game{
             turnPlayer: this.turnPlayer,
             cards: this.publicCards,
             players:this.players.map((playerId:string):IPlayerData=>{return {id:playerId,name:playerId,money:0} }),
-            cardsByPlayer:{}
+            cardsByPlayer: (this.ended) ? this.cardsByPlayer : {}
         }
     }
 

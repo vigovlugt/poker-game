@@ -34,7 +34,7 @@ body {
 }
 
 .GlobalCards{
-  width: 1170px;
+  max-width: 1170px;
   height: 353px;
   top:60px;
 
@@ -77,7 +77,7 @@ body {
 
 .Player{
   width:250px;
-  height: 150px;
+  /* height: 150px; */
   position: absolute;
   word-wrap: break-word;
 
@@ -89,6 +89,13 @@ body {
   box-shadow: 0px 2px 5px 0px grey;
 }
 
+.player-card{
+  display: inline-block;
+  width: 110px;
+  height: 161px;
+  background-size: 110px 161px;
+  float: left;
+}
 
 .Player:nth-child(1){
   bottom:10px;
